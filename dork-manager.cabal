@@ -5,21 +5,21 @@ version: 0.0.0.1
 
 common shared-libs
   build-depends:  base >=4.11 && <4.18
-                , random
-                , random-shuffle
+                -- , random
+                -- , random-shuffle
                 , memory
                 , filepath
-                , http-conduit
+                -- , http-conduit
                 , time
                 , bytestring
-                , aeson
+                -- , aeson
                 , vector
                 , unordered-containers
                 , text
                 , containers
-                , cryptohash-sha256
-                , crypton
-                , scientific
+                -- , cryptohash-sha256
+                -- , crypton
+                -- , scientific
                 , directory
   ghc-options: -O2
 
@@ -28,4 +28,4 @@ executable fetchStats
   hs-source-dirs: src
   main-is: Sort.hs
   other-modules:  Types
-  build-depends:  async
+  -- build-depends:  async
