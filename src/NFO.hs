@@ -6,6 +6,7 @@ import Text.XML
 import Text.XML.Cursor
 import Data.Text (Text, unpack)
 import qualified Data.Text as T
+import Movies
 
 parseNfo :: Document -> Movie
 parseNfo doc = Movie
@@ -59,7 +60,7 @@ parseStreamDetails cur = StreamDetails
 
 parseVideo :: Cursor -> Video
 parseVideo cur = Video
-  { codec = getElemText "codec"
+  { v_codec = getElemText "codec"
   , aspect = read (getElemText "aspect") :: Double
   , width = read (getElemText "width") :: Int
   , height = read (getElemText "height") :: Int
@@ -69,8 +70,8 @@ parseVideo cur = Video
 
 parseAudio :: Cursor -> Audio
 parseAudio cur = Audio
-  { codec = getElemText "codec"
-  , language = getElemText "language"
+  { a_codec = getElemText "codec"
+  , a_language = getElemText "language"
   , channels = read (getElemText "channels") :: Int
   }
   where
@@ -78,7 +79,7 @@ parseAudio cur = Audio
 
 parseSubtitle :: Cursor -> Subtitle
 parseSubtitle cur = Subtitle
-  { language = getElemText "language"
+  { s_language = getElemText "language"
   }
   where
     getElemText name = T.unpack $ head $ cur $// element name &// content

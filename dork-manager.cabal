@@ -19,9 +19,11 @@ executable parseMovie
   import: shared-libs
   hs-source-dirs: src
   main-is: Main.hs
-  other-modules:  Movies, NFO
+  other-modules:  Movies, NFO, JSON
   build-depends:  xml-conduit
                 , directory
+                -- , xml-lens
+                , free
                 , optparse-applicative
                 , xml-conduit
                 , aeson
