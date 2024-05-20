@@ -1,4 +1,4 @@
-# ⚾ Pelotero Engine ⚾
+# Dork Manager
 
 [![Haskell CI using Nix Flake](https://github.com/cardanonix/pelotero-engine/actions/workflows/haskell.yml/badge.svg)](https://github.com/cardanonix/pelotero-engine/actions/workflows/haskell.yml)
 
