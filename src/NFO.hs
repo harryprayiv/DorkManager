@@ -1,4 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
+module NFO where
+
 
 import Text.XML
 import Text.XML.Cursor

@@ -13,15 +13,15 @@ common shared-libs
                 , unordered-containers
                 , text
                 , containers
-                , directory
-                , optparse-applicative
-                , xml-conduit
-                , aeson
   ghc-options: -O2
 
 executable parseMovie
   import: shared-libs
   hs-source-dirs: src
-  main-is: Sort.hs
-  other-modules:  Movies
+  main-is: Main.hs
+  other-modules:  Movies, NFO
   build-depends:  xml-conduit
+                , directory
+                , optparse-applicative
+                , xml-conduit
+                , aeson

@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+module Movies where
 
 import Data.Aeson (ToJSON, FromJSON)
 import GHC.Generics (Generic)
