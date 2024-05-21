@@ -4,13 +4,13 @@ import Options.Applicative
 import System.Directory
 import System.FilePath
 import Control.Monad
-import Data.Maybe (mapMaybe)
+import Data.List (sortOn)
+import Data.Maybe (mapMaybe, isNothing)
 import qualified Data.ByteString.Lazy as B
-import Text.XML (readFile, def, toXMLDocument)
+import Text.XML (readFile, def)
 import Movies
 import NFO
 import JSON
--- import Text.XML.Lens ()
 
 data Options = Options
   { directory :: FilePath
@@ -37,15 +37,42 @@ main = do
 
 processDirectory :: FilePath -> IO ()
 processDirectory dir = do
-  files <- listDirectory dir
-  let nfoFiles = map (dir </>) $ filter ((== ".nfo") . takeExtension) files
-  movies <- mapM processNfoFile nfoFiles
-  mapM_ writeJson movies
-  where
-    writeJson (filePath, movie) = B.writeFile (replaceExtension filePath "json") (movieToJSON movie)
+  folders <- listDirectory dir
+  allMovies <- forM folders $ \folder -> do
+    let folderPath = dir </> folder
+    isDir <- doesDirectoryExist folderPath
+    if isDir
+      then do
+        nfoFiles <- listDirectory folderPath
+        let nfoFile = filter ((== ".nfo") . takeExtension) nfoFiles
+        if null nfoFile
+          then do
+            putStrLn $ "No .nfo file in folder: " ++ folderPath
+            return (folderPath, Nothing)
+          else do
+            movie <- processNfoFile (folderPath </> head nfoFile)
+            return (folderPath, Just movie)
+      else return (folderPath, Nothing)
 
-processNfoFile :: FilePath -> IO (FilePath, Movie)
+  let movies = mapMaybe snd allMovies
+  let missingNfoFiles = map fst $ filter (isNothing . snd) allMovies
+
+  putStrLn "Processing complete."
+  putStrLn $ "Total folders scanned: " ++ show (length folders)
+  putStrLn $ "Movies found: " ++ show (length movies)
+  putStrLn $ "Folders missing .nfo files: " ++ show (length missingNfoFiles)
+
+  forM_ movies $ \movie -> putStrLn $ "Found movie: " ++ title movie
+
+  let sortedMovies = sortOn title movies
+  writeJson (dir </> "library.json") sortedMovies
+  putStrLn $ "Library JSON written to: " ++ (dir </> "library.json")
+  writeJson (dir </> "unNamed.json") missingNfoFiles
+  putStrLn $ "Missing NFO JSON written to: " ++ (dir </> "unNamed.json")
+
+processNfoFile :: FilePath -> IO Movie
 processNfoFile filePath = do
+  putStrLn $ "Processing file: " ++ filePath
   doc <- Text.XML.readFile def filePath
   let movie = parseNfo doc
-  return (filePath, movie)
+  return movie

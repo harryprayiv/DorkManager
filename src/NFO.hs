@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module NFO where
 
-
 import Text.XML
 import Text.XML.Cursor
 import Data.Text (Text, unpack)
@@ -25,26 +24,19 @@ parseNfo doc = Movie
   , tags = getElemsText "tag"
   , countries = getElemsText "country"
   , studios = getElemsText "studio"
-  , actors = getActors
   , directors = getElemsText "director"
   , credits = getElemsText "credits"
   , fileInfo = getFileInfo
   , imdbId = getAttrText "imdb" "id"
   , tmdbId = getAttrText "tmdb" "id"
+  , actors = []  -- Initialize actors as an empty list
   }
   where
     cursor = fromDocument doc
-    getElemText name = T.unpack $ head $ cursor $// element name &// content
+    getElemText name = T.unpack $ T.concat $ cursor $// element name &// content
     getElemsText name = map T.unpack $ cursor $// element name &// content
-    getAttrText elemName attrName = T.unpack $ head $ cursor $// element elemName >=> attribute attrName
-    getActors = map parseActor $ cursor $// element "actor"
+    getAttrText elemName attrName = T.unpack $ T.concat $ cursor $// element elemName >=> attribute attrName
     getFileInfo = parseFileInfo $ head $ cursor $// element "fileinfo"
-
-parseActor :: Cursor -> Actor
-parseActor cur = Actor
-  { name = unpack $ head $ cur $// element "name" &// content
-  , role = unpack $ head $ cur $// element "role" &// content
-  }
 
 parseFileInfo :: Cursor -> FileInfo
 parseFileInfo cur = FileInfo
@@ -66,7 +58,7 @@ parseVideo cur = Video
   , height = read (getElemText "height") :: Int
   }
   where
-    getElemText name = T.unpack $ head $ cur $// element name &// content
+    getElemText name = T.unpack $ T.concat $ cur $// element name &// content
 
 parseAudio :: Cursor -> Audio
 parseAudio cur = Audio
@@ -75,11 +67,11 @@ parseAudio cur = Audio
   , channels = read (getElemText "channels") :: Int
   }
   where
-    getElemText name = T.unpack $ head $ cur $// element name &// content
+    getElemText name = T.unpack $ T.concat $ cur $// element name &// content
 
 parseSubtitle :: Cursor -> Subtitle
 parseSubtitle cur = Subtitle
   { s_language = getElemText "language"
   }
   where
-    getElemText name = T.unpack $ head $ cur $// element name &// content
+    getElemText name = T.unpack $ T.concat $ cur $// element name &// content
