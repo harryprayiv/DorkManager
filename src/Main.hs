@@ -1,13 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 import Options.Applicative
+import Control.Exception (try, SomeException)
 import System.Directory
 import System.FilePath
 import Control.Monad
 import Data.List (sortOn)
 import Data.Maybe (mapMaybe, isNothing)
 import qualified Data.ByteString.Lazy as B
-import Text.XML (readFile, def)
+import qualified Data.ByteString as BS
+import Conduit (yieldMany, mapC, (.|), runConduitRes)
+import Data.Conduit.Binary (sinkFileCautious)
+import Text.XML (Document, readFile, def)
+import Data.Aeson (encode) -- Importing encode from Aeson
 import Movies
 import NFO
 import JSON
@@ -50,8 +55,10 @@ processDirectory dir = do
             putStrLn $ "No .nfo file in folder: " ++ folderPath
             return (folderPath, Nothing)
           else do
-            movie <- processNfoFile (folderPath </> head nfoFile)
-            return (folderPath, Just movie)
+            movieResult <- processNfoFile (folderPath </> head nfoFile)
+            case movieResult of
+              Left err -> return (folderPath, Nothing)
+              Right movie -> return (folderPath, Just movie)
       else return (folderPath, Nothing)
 
   let movies = mapMaybe snd allMovies
@@ -65,14 +72,17 @@ processDirectory dir = do
   forM_ movies $ \movie -> putStrLn $ "Found movie: " ++ title movie
 
   let sortedMovies = sortOn title movies
-  writeJson (dir </> "library.json") sortedMovies
+  runConduitRes $ yieldMany sortedMovies .| mapC (BS.concat . B.toChunks . encode) .| sinkFileCautious (dir </> "library.json")
   putStrLn $ "Library JSON written to: " ++ (dir </> "library.json")
-  writeJson (dir </> "unNamed.json") missingNfoFiles
+  runConduitRes $ yieldMany missingNfoFiles .| mapC (BS.concat . B.toChunks . encode) .| sinkFileCautious (dir </> "unNamed.json")
   putStrLn $ "Missing NFO JSON written to: " ++ (dir </> "unNamed.json")
 
-processNfoFile :: FilePath -> IO Movie
+processNfoFile :: FilePath -> IO (Either String Movie)
 processNfoFile filePath = do
   putStrLn $ "Processing file: " ++ filePath
-  doc <- Text.XML.readFile def filePath
-  let movie = parseNfo doc
-  return movie
+  result <- try (Text.XML.readFile def filePath) :: IO (Either SomeException Document)
+  case result of
+    Left ex -> do
+      putStrLn $ "Error reading file: " ++ filePath ++ " - " ++ show ex
+      return $ Left filePath
+    Right doc -> return $ Right (parseNfo doc)

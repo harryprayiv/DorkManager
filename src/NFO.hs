@@ -5,6 +5,8 @@ import Text.XML
 import Text.XML.Cursor
 import Data.Text (Text, unpack)
 import qualified Data.Text as T
+import Conduit (yieldMany, mapC)
+import Data.Conduit.Binary (sinkFileCautious)
 import Movies
 
 parseNfo :: Document -> Movie

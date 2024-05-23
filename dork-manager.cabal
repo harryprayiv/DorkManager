@@ -22,8 +22,11 @@ executable parseMovie
   other-modules:  Movies, NFO, JSON
   build-depends:  xml-conduit
                 , directory
-                -- , xml-lens
+                , conduit-extra
                 , free
                 , optparse-applicative
                 , xml-conduit
                 , aeson
+                , conduit-combinators
+                , conduit
+                , directory

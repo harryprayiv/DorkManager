@@ -4,6 +4,8 @@ module Movies where
 
 import Data.Aeson (ToJSON, FromJSON)
 import GHC.Generics (Generic)
+import Conduit (yieldMany, mapC)
+import Data.Conduit.Binary (sinkFileCautious)
 
 data Movie = Movie
   { title :: String
