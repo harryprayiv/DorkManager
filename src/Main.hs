@@ -56,8 +56,7 @@ processConfigFile configPath = do
   createDirectoryIfMissing True libraryDir
 
   -- Initialize lists to store results from all directories
-  allResults <- fmap concat . forM dirs $ \dir -> do
-    processDirectory dir
+  allResults <- fmap concat . forM dirs $ \dir -> processDirectory dir
 
   let (errors, movies) = partitionEithers allResults
 
@@ -98,9 +97,7 @@ processDirectory dir = do
           then do
             putStrLn $ "No .nfo file in folder: " ++ folderPath
             return (Left folderPath)
-          else do
-            movieResult <- processNfoFile (folderPath </> head nfoFile)
-            return movieResult
+          else processNfoFile (folderPath </> head nfoFile)
       else return (Left folderPath)
 
 processNfoFile :: FilePath -> IO (Either String Movie)
@@ -111,7 +108,7 @@ processNfoFile filePath = do
     Left ex -> do
       putStrLn $ "Error reading file: " ++ filePath ++ " - " ++ show ex
       return $ Left filePath
-    Right doc -> 
+    Right doc ->
       case parseNfoSafe doc of
         Just movie -> return $ Right movie
         Nothing -> do
@@ -119,7 +116,5 @@ processNfoFile filePath = do
           return $ Left filePath
 
 parseNfoSafe :: Document -> Maybe Movie
-parseNfoSafe doc = 
-  case parseNfo doc of
-    Just movie -> Just movie
-    Nothing -> Nothing
+parseNfoSafe doc =
+  parseNfo doc Options.Applicative.<|> Nothing

@@ -1,0 +1,24 @@
+#! /usr/bin/env bash
+
+# Define the source file and the destination directory
+SOURCE_FILE="/home/bismuth/plutus/workspace/scdWs/DorkManager/dork_library/unNamed.json"
+DEST_DIR="/home/bismuth/video/_Unsorted/torrents/Complete/AMC/Movies"
+
+# Create the destination directory if it doesn't exist
+mkdir -p "$DEST_DIR"
+
+# Read each line from the source file
+while IFS= read -r movie_path; do
+    # Trim the leading and trailing quotes from the path
+    movie_path=$(echo "$movie_path" | sed 's/^"//;s/"$//')
+    
+    # Check if the movie path exists and is a directory
+    if [[ -d "$movie_path" ]]; then
+        echo "Moving: $movie_path to $DEST_DIR"
+        mv "$movie_path" "$DEST_DIR"
+    else
+        echo "Directory does not exist: $movie_path"
+    fi
+done < "$SOURCE_FILE"
+
+echo "All directories moved successfully."
