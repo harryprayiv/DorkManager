@@ -7,6 +7,7 @@ import System.FilePath
 import Control.Monad
 import Data.List (sortOn)
 import Data.Maybe (mapMaybe, isNothing)
+import Data.Either (partitionEithers) -- Import partitionEithers from Data.Either
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BS8
@@ -19,60 +20,50 @@ import NFO
 import JSON
 import Control.Monad.Trans.Resource (MonadThrow)
 import Control.Monad.IO.Class (liftIO)
+import Prelude hiding (readFile) -- Hide Prelude's readFile to avoid ambiguity
+import qualified Prelude (readFile) -- Qualify Prelude's readFile
 
 data Options = Options
-  { directory :: FilePath
+  { configFile :: FilePath
   }
 
 parseOptions :: Parser Options
 parseOptions = Options
   <$> strOption
-      ( long "directory"
-     <> short 'd'
-     <> metavar "DIR"
-     <> help "Directory to scan for .nfo files" )
+      ( long "config"
+     <> short 'c'
+     <> metavar "CONFIG"
+     <> help "Configuration file listing directories to scan for .nfo files" )
 
 optsParser :: ParserInfo Options
 optsParser = info (parseOptions <**> helper)
   ( fullDesc
- <> progDesc "Scan a directory for .nfo files and convert them to JSON"
+ <> progDesc "Scan directories listed in a configuration file for .nfo files and convert them to JSON"
  <> header "parseMovie - A tool to convert movie .nfo files to JSON" )
 
 main :: IO ()
 main = do
   opts <- execParser optsParser
-  processDirectory (directory opts)
+  processConfigFile (configFile opts)
 
-processDirectory :: FilePath -> IO ()
-processDirectory dir = do
-  folders <- listDirectory dir
-  allMovies <- forM folders $ \folder -> do
-    let folderPath = dir </> folder
-    isDir <- doesDirectoryExist folderPath
-    if isDir
-      then do
-        nfoFiles <- listDirectory folderPath
-        let nfoFile = filter ((== ".nfo") . takeExtension) nfoFiles
-        if null nfoFile
-          then do
-            putStrLn $ "No .nfo file in folder: " ++ folderPath
-            return (folderPath, Nothing)
-          else do
-            movieResult <- processNfoFile (folderPath </> head nfoFile)
-            case movieResult of
-              Left err -> return (folderPath, Nothing)
-              Right movie -> return (folderPath, Just movie)
-      else return (folderPath, Nothing)
+processConfigFile :: FilePath -> IO ()
+processConfigFile configPath = do
+  dirs <- lines <$> Prelude.readFile configPath -- Use Prelude.readFile explicitly
+  currentDir <- getCurrentDirectory
+  let libraryDir = currentDir </> "dork_library"
 
-  let movies = mapMaybe snd allMovies
-  let missingNfoFiles = map fst $ filter (isNothing . snd) allMovies
+  -- Ensure the dork_library directory exists
+  createDirectoryIfMissing True libraryDir
+
+  -- Initialize lists to store results from all directories
+  allResults <- fmap concat . forM dirs $ \dir -> do
+    processDirectory dir
+
+  let (errors, movies) = partitionEithers allResults
 
   putStrLn "Processing complete."
-  putStrLn $ "Total folders scanned: " ++ show (length folders)
-  putStrLn $ "Movies found: " ++ show (length movies)
-  putStrLn $ "Folders missing .nfo files: " ++ show (length missingNfoFiles)
-
-  forM_ movies $ \movie -> putStrLn $ "Found movie: " ++ title movie
+  putStrLn $ "Total movies found: " ++ show (length movies)
+  putStrLn $ "Total folders missing .nfo files: " ++ show (length errors)
 
   let sortedMovies = sortOn title movies
 
@@ -82,16 +73,35 @@ processDirectory dir = do
   runConduitRes $
     yieldMany sortedMovies
     .| mapC (\m -> let encoded = encode m in BS.concat (BL.toChunks encoded) `BS8.append` BS8.singleton '\n')
-    .| sinkFileCautious (dir </> "library.json")
+    .| sinkFileCautious (libraryDir </> "library.json")
 
-  putStrLn $ "Library JSON written to: " ++ (dir </> "library.json")
+  putStrLn $ "Library JSON written to: " ++ (libraryDir </> "library.json")
 
   runConduitRes $
-    yieldMany missingNfoFiles
+    yieldMany errors
     .| mapC (\f -> let encoded = encode f in BS.concat (BL.toChunks encoded) `BS8.append` BS8.singleton '\n')
-    .| sinkFileCautious (dir </> "unNamed.json")
+    .| sinkFileCautious (libraryDir </> "unNamed.json")
 
-  putStrLn $ "Missing NFO JSON written to: " ++ (dir </> "unNamed.json")
+  putStrLn $ "Missing NFO JSON written to: " ++ (libraryDir </> "unNamed.json")
+
+processDirectory :: FilePath -> IO [Either String Movie]
+processDirectory dir = do
+  folders <- listDirectory dir
+  forM folders $ \folder -> do
+    let folderPath = dir </> folder
+    isDir <- doesDirectoryExist folderPath
+    if isDir
+      then do
+        nfoFiles <- listDirectory folderPath
+        let nfoFile = filter ((== ".nfo") . takeExtension) nfoFiles
+        if null nfoFile
+          then do
+            putStrLn $ "No .nfo file in folder: " ++ folderPath
+            return (Left folderPath)
+          else do
+            movieResult <- processNfoFile (folderPath </> head nfoFile)
+            return movieResult
+      else return (Left folderPath)
 
 processNfoFile :: FilePath -> IO (Either String Movie)
 processNfoFile filePath = do
