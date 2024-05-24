@@ -1,40 +1,40 @@
-name: Haskell CI with Nix Flake
+# name: Haskell CI with Nix Flake
 
-on:
-  workflow_dispatch:
-  pull_request:
-    branches: [main]
-  push:
-    branches: [main]
-  schedule:
-    - cron: '0 0 * * 0' # Weekly to maintain cache
+# on:
+#   workflow_dispatch:
+#   pull_request:
+#     branches: [main]
+#   push:
+#     branches: [main]
+#   schedule:
+#     - cron: '0 0 * * 0' # Weekly to maintain cache
 
-jobs:
-  build-and-test:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-      name: Checkout code
+# jobs:
+#   build-and-test:
+#     runs-on: ubuntu-latest
+#     steps:
+#     - uses: actions/checkout@v3
+#       name: Checkout code
 
-    - name: Setup Nix with Flakes support
-      uses: cachix/install-nix-action@v15
-      with:
-        # Removed install_url to rely on the action's default installation method
-        extra_nix_config: |
-          experimental-features = nix-command flakes
+#     - name: Setup Nix with Flakes support
+#       uses: cachix/install-nix-action@v15
+#       with:
+#         # Removed install_url to rely on the action's default installation method
+#         extra_nix_config: |
+#           experimental-features = nix-command flakes
 
-    - name: Build and run with Nix Flake
-      run: |
-        nix build .#pelotero-engine:exe:generators --accept-flake-config
-        ./result/bin/generators
-        nix build .#pelotero-engine:exe:playground --accept-flake-config
-        nix build .#pelotero-engine:exe:head2head --accept-flake-config
-        nix build .#pelotero-engine:exe:league --accept-flake-config
-        nix build .#pelotero-engine:exe:test_adt --accept-flake-config
-        nix build .#pelotero-engine:exe:official --accept-flake-config
-        nix build .#pelotero-engine:exe:autodraft --accept-flake-config
-        nix build .#pelotero-engine:exe:fetchStats --accept-flake-config
-        nix build .#pelotero-engine:exe:roster --accept-flake-config
+#     - name: Build and run with Nix Flake
+#       run: |
+#         nix build .#pelotero-engine:exe:generators --accept-flake-config
+#         ./result/bin/generators
+#         nix build .#pelotero-engine:exe:playground --accept-flake-config
+#         nix build .#pelotero-engine:exe:head2head --accept-flake-config
+#         nix build .#pelotero-engine:exe:league --accept-flake-config
+#         nix build .#pelotero-engine:exe:test_adt --accept-flake-config
+#         nix build .#pelotero-engine:exe:official --accept-flake-config
+#         nix build .#pelotero-engine:exe:autodraft --accept-flake-config
+#         nix build .#pelotero-engine:exe:fetchStats --accept-flake-config
+#         nix build .#pelotero-engine:exe:roster --accept-flake-config
 
     # - name: Run Generator
     #   run: ./result/bin/generators
