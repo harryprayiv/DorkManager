@@ -30,3 +30,4 @@ executable parseMovie
                 , conduit-combinators
                 , conduit
                 , directory
+                , resourcet
