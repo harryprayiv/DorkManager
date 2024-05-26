@@ -49,6 +49,6 @@ flake.nix.bak
 *.sln
 *.sw?
 notes/CBSLeagueScraper.py
-*dork_library/library.json*
-*dork_library/unNamed.json*
+*dork_library/library.ndjson*
+*dork_library/unNamed.ndjson*
 config.txt

@@ -8,7 +8,6 @@ import Data.Text (Text, unpack)
 import qualified Data.Text as T
 import Text.Read (readMaybe)
 import Data.Maybe (listToMaybe)
-
 import Movies
 
 parseNfo :: Document -> Maybe Movie
@@ -19,6 +18,7 @@ parseNfo doc = do
     { title = getElemText cursor "title"
     , originalTitle = getElemText cursor "originaltitle"
     , sortTitle = getElemText cursor "sorttitle"
+    , set = getFirstLineOfElemText cursor "set"
     , year = readElemText cursor "year" 0
     , rating = readElemText cursor "rating" 0.0
     , votes = readElemText cursor "votes" 0
@@ -40,6 +40,7 @@ parseNfo doc = do
     }
   where
     getElemText cur name = T.unpack $ T.concat $ cur $// element name &// content
+    getFirstLineOfElemText cur name = T.unpack . T.strip . head . T.lines $ T.concat $ cur $// element name &// content
     getElemsText cur name = map T.unpack $ cur $// element name &// content
     getAttrText cur elemName attrName = T.unpack $ T.concat $ cur $// element elemName >=> attribute attrName
     readElemText cur name def = maybe def id . readMaybe . getElemText cur $ name

@@ -11,6 +11,7 @@ data Movie = Movie
   { title :: String
   , originalTitle :: String
   , sortTitle :: String
+  , set :: String
   , year :: Int
   , rating :: Double
   , votes :: Int

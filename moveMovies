@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 
 # Define the source file and the destination directory
-SOURCE_FILE="/home/bismuth/plutus/workspace/scdWs/DorkManager/dork_library/unNamed.json"
+SOURCE_FILE="/home/bismuth/plutus/workspace/scdWs/DorkManager/dork_library/unNamed.ndjson"
 DEST_DIR="/home/bismuth/video/_Unsorted/torrents/Complete/AMC/Movies"
 
 # Create the destination directory if it doesn't exist
