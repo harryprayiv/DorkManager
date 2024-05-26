@@ -66,21 +66,21 @@ processConfigFile configPath = do
 
   let sortedMovies = sortOn title movies
 
-  putStrLn $ "Writing " ++ show (length sortedMovies) ++ " movies to library.json"
+  putStrLn $ "Writing " ++ show (length sortedMovies) ++ " movies to library.ndjson"
 
   runConduitRes $
     yieldMany sortedMovies
     .| mapC (\m -> let encoded = encode m in BS.concat (BL.toChunks encoded) `BS8.append` BS8.singleton '\n')
-    .| sinkFileCautious (libraryDir </> "library.json")
+    .| sinkFileCautious (libraryDir </> "library.ndjson")
 
-  putStrLn $ "Library JSON written to: " ++ (libraryDir </> "library.json")
+  putStrLn $ "Library JSON written to: " ++ (libraryDir </> "library.ndjson")
 
   runConduitRes $
     yieldMany errors
     .| mapC (\f -> let encoded = encode f in BS.concat (BL.toChunks encoded) `BS8.append` BS8.singleton '\n')
-    .| sinkFileCautious (libraryDir </> "unNamed.json")
+    .| sinkFileCautious (libraryDir </> "unNamed.ndjson")
 
-  putStrLn $ "Missing NFO JSON written to: " ++ (libraryDir </> "unNamed.json")
+  putStrLn $ "Missing NFO JSON written to: " ++ (libraryDir </> "unNamed.ndjson")
 
 processDirectory :: FilePath -> IO [Either String Movie]
 processDirectory dir = do
