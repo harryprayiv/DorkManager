@@ -7,7 +7,7 @@ import System.FilePath
 import Control.Monad
 import Data.List (sortOn)
 import Data.Maybe (mapMaybe, isNothing)
-import Data.Either (partitionEithers) -- Import partitionEithers from Data.Either
+import Data.Either (partitionEithers)
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BS8
@@ -20,8 +20,9 @@ import NFO
 import JSON
 import Control.Monad.Trans.Resource (MonadThrow)
 import Control.Monad.IO.Class (liftIO)
-import Prelude hiding (readFile) -- Hide Prelude's readFile to avoid ambiguity
-import qualified Prelude (readFile) -- Qualify Prelude's readFile
+import Prelude hiding (readFile)
+import qualified Prelude (readFile)
+import Debug.Trace (trace, traceShowId)
 
 data Options = Options
   { configFile :: FilePath
@@ -48,14 +49,12 @@ main = do
 
 processConfigFile :: FilePath -> IO ()
 processConfigFile configPath = do
-  dirs <- lines <$> Prelude.readFile configPath -- Use Prelude.readFile explicitly
+  dirs <- lines <$> Prelude.readFile configPath
   currentDir <- getCurrentDirectory
   let libraryDir = currentDir </> "dork_library"
 
-  -- Ensure the dork_library directory exists
   createDirectoryIfMissing True libraryDir
 
-  -- Initialize lists to store results from all directories
   allResults <- fmap concat . forM dirs $ \dir -> do
     processDirectory dir
 
@@ -67,7 +66,6 @@ processConfigFile configPath = do
 
   let sortedMovies = sortOn title movies
 
-  -- Debugging: print the number of sorted movies
   putStrLn $ "Writing " ++ show (length sortedMovies) ++ " movies to library.json"
 
   runConduitRes $
