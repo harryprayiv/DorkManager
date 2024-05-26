@@ -35,7 +35,7 @@ data Movie = Movie
   , imdbId :: String
   , tmdbId :: String
   , actors :: [Actor]
-  } deriving (Show, Generic)
+  } deriving (Show, Generic, Eq)
 
 instance FromJSON Movie
 
@@ -68,16 +68,16 @@ instance ToJSON Movie where
   toEncoding Movie{..} =
     pairs $ "movieId" .= movieId
          <> "title" .= title
+         <> "year" .= year
+         <> "runtime" .= runtime
+         <> "set" .= set
          <> "originalTitle" .= originalTitle
          <> "sortTitle" .= sortTitle
-         <> "set" .= set
-         <> "year" .= year
          <> "rating" .= rating
          <> "votes" .= votes
          <> "mpaa" .= mpaa
          <> "plot" .= plot
          <> "tagline" .= tagline
-         <> "runtime" .= runtime
          <> "genres" .= genres
          <> "tags" .= tags
          <> "countries" .= countries
@@ -91,7 +91,7 @@ instance ToJSON Movie where
 
 data FileInfo = FileInfo
   { streamDetails :: StreamDetails
-  } deriving (Show, Generic)
+  } deriving (Show, Generic, Eq)
 
 instance ToJSON FileInfo
 instance FromJSON FileInfo
@@ -100,7 +100,7 @@ data StreamDetails = StreamDetails
   { video :: Video
   , audios :: [Audio]
   , subtitles :: [Subtitle]
-  } deriving (Show, Generic)
+  } deriving (Show, Generic, Eq)
 
 instance ToJSON StreamDetails
 instance FromJSON StreamDetails
@@ -110,7 +110,7 @@ data Video = Video
   , aspect :: Double
   , width :: Int
   , height :: Int
-  } deriving (Show, Generic)
+  } deriving (Show, Generic, Eq)
 
 instance ToJSON Video
 instance FromJSON Video
@@ -119,14 +119,14 @@ data Audio = Audio
   { a_codec :: String
   , a_language :: String
   , channels :: Int
-  } deriving (Show, Generic)
+  } deriving (Show, Generic, Eq)
 
 instance ToJSON Audio
 instance FromJSON Audio
 
 data Subtitle = Subtitle
   { s_language :: String
-  } deriving (Show, Generic)
+  } deriving (Show, Generic, Eq)
 
 instance ToJSON Subtitle
 instance FromJSON Subtitle
@@ -134,7 +134,7 @@ instance FromJSON Subtitle
 data Actor = Actor
   { name :: String
   , role :: String
-  } deriving (Show, Generic)
+  } deriving (Show, Generic, Eq)
 
 instance ToJSON Actor
 instance FromJSON Actor

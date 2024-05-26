@@ -5,7 +5,8 @@ import Control.Exception (try, SomeException)
 import System.Directory
 import System.FilePath
 import Control.Monad
-import Data.List (sortOn)
+import Data.List (sortOn, groupBy, (\\))
+import Data.Function (on)
 import Data.Maybe (mapMaybe, isNothing)
 import Data.Either (partitionEithers)
 import qualified Data.ByteString.Lazy as BL
@@ -14,7 +15,7 @@ import qualified Data.ByteString.Char8 as BS8
 import Conduit (yieldMany, mapC, (.|), runConduitRes)
 import Data.Conduit.Binary (sinkFileCautious)
 import Text.XML (Document, readFile, def)
-import Data.Aeson (encode)
+import Data.Aeson (encode, decode)
 import Movies
 import NFO
 import JSON
@@ -22,7 +23,6 @@ import Control.Monad.Trans.Resource (MonadThrow)
 import Control.Monad.IO.Class (liftIO)
 import Prelude hiding (readFile)
 import qualified Prelude (readFile)
-import Debug.Trace (trace, traceShowId)
 
 data Options = Options
   { configFile :: FilePath
@@ -46,6 +46,7 @@ main :: IO ()
 main = do
   opts <- execParser optsParser
   processConfigFile (configFile opts)
+  findAndProcessDuplicates
 
 processConfigFile :: FilePath -> IO ()
 processConfigFile configPath = do
@@ -121,3 +122,26 @@ parseNfoSafe doc =
   case parseNfo doc of
     Just movie -> Just movie
     Nothing -> Nothing
+
+findAndProcessDuplicates :: IO ()
+findAndProcessDuplicates = do
+  currentDir <- getCurrentDirectory
+  let libraryPath = currentDir </> "dork_library" </> "library.ndjson"
+  movieLines <- BS8.lines <$> BS.readFile libraryPath
+  let movies = mapMaybe (decode . BL.fromStrict) movieLines :: [Movie]
+  let groupedMovies = groupBy ((==) `on` movieId) $ sortOn movieId movies
+  let duplicateGroups = filter (\g -> length g > 1) groupedMovies
+  let updatedMovies = concatMap updateGroup duplicateGroups ++ (movies \\ concat duplicateGroups)
+  
+  putStrLn $ "Updating and writing duplicates to library.ndjson"
+  runConduitRes $
+    yieldMany updatedMovies
+    .| mapC (\m -> let encoded = encode m in BS.concat (BL.toChunks encoded) `BS8.append` BS8.singleton '\n')
+    .| sinkFileCautious libraryPath
+
+updateGroup :: [Movie] -> [Movie]
+updateGroup group =
+  let baseTitle = title (head group)
+      updateMovie movie =
+        movie { set = if null (set movie) then baseTitle else set movie }
+  in map updateMovie group
