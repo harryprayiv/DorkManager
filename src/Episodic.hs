@@ -29,7 +29,7 @@ data Episodic = Episodic
   , fileInfo :: FileInfo
   , imdbId :: String
   , tmdbId :: String
-  , actors :: [Actor]  -- Added actors field
+  , actors :: [Actor]
   } deriving (Show, Generic)
 
 instance ToJSON Episodic

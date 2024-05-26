@@ -1,11 +1,16 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
+
 module Movies where
 
-import Data.Aeson (ToJSON, FromJSON)
+import Data.Aeson (ToJSON, FromJSON, (.=), object, toJSON, toEncoding, pairs)
 import GHC.Generics (Generic)
 import Conduit (yieldMany, mapC)
 import Data.Conduit.Binary (sinkFileCautious)
+import Data.Text (Text)
+import qualified Data.Text as T
 
 data Movie = Movie
   { title :: String
@@ -29,11 +34,60 @@ data Movie = Movie
   , fileInfo :: FileInfo
   , imdbId :: String
   , tmdbId :: String
-  , actors :: [Actor]  -- Added actors field
+  , actors :: [Actor]
   } deriving (Show, Generic)
 
-instance ToJSON Movie
 instance FromJSON Movie
+
+instance ToJSON Movie where
+  toJSON Movie{..} = 
+    object [ "movieId" .= movieId
+           , "title" .= title
+           , "originalTitle" .= originalTitle
+           , "sortTitle" .= sortTitle
+           , "set" .= set
+           , "year" .= year
+           , "rating" .= rating
+           , "votes" .= votes
+           , "mpaa" .= mpaa
+           , "plot" .= plot
+           , "tagline" .= tagline
+           , "runtime" .= runtime
+           , "genres" .= genres
+           , "tags" .= tags
+           , "countries" .= countries
+           , "studios" .= studios
+           , "directors" .= directors
+           , "credits" .= credits
+           , "fileInfo" .= fileInfo
+           , "imdbId" .= imdbId
+           , "tmdbId" .= tmdbId
+           , "actors" .= actors
+           ]
+
+  toEncoding Movie{..} =
+    pairs $ "movieId" .= movieId
+         <> "title" .= title
+         <> "originalTitle" .= originalTitle
+         <> "sortTitle" .= sortTitle
+         <> "set" .= set
+         <> "year" .= year
+         <> "rating" .= rating
+         <> "votes" .= votes
+         <> "mpaa" .= mpaa
+         <> "plot" .= plot
+         <> "tagline" .= tagline
+         <> "runtime" .= runtime
+         <> "genres" .= genres
+         <> "tags" .= tags
+         <> "countries" .= countries
+         <> "studios" .= studios
+         <> "directors" .= directors
+         <> "credits" .= credits
+         <> "fileInfo" .= fileInfo
+         <> "imdbId" .= imdbId
+         <> "tmdbId" .= tmdbId
+         <> "actors" .= actors
 
 data FileInfo = FileInfo
   { streamDetails :: StreamDetails

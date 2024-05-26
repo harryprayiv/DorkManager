@@ -39,7 +39,7 @@ parseNfo doc = do
     , fileInfo = traceShowId $ fileInfo
     , imdbId = traceShowId $ getAttrText cursor (Name "imdb" Nothing Nothing) (Name "id" Nothing Nothing)
     , tmdbId = traceShowId $ getAttrText cursor (Name "tmdb" Nothing Nothing) (Name "id" Nothing Nothing)
-    , actors = []  -- Initialize actors as an empty list
+    , actors = traceShowId $ parseActors cursor
     }
   where
     getElemText cur name = trace ("Getting element text for: " ++ show name) $
@@ -57,6 +57,19 @@ parseNfo doc = do
     readElemText cur name def = trace ("Reading element text for: " ++ show name) $
       let text = getElemText cur name
       in fromMaybe def (readMaybe text)
+
+parseActors :: Cursor -> [Actor]
+parseActors cur = trace "Parsing actors..." $
+  mapMaybe parseActor (cur $// element (Name "actor" Nothing Nothing))
+
+parseActor :: Cursor -> Maybe Actor
+parseActor cur = do
+  name <- listToMaybe $ cur $// element (Name "name" Nothing Nothing) &// content
+  role <- listToMaybe $ cur $// element (Name "role" Nothing Nothing) &// content
+  return Actor
+    { name = T.unpack name
+    , role = T.unpack role
+    }
 
 parseFileInfo :: Cursor -> Maybe FileInfo
 parseFileInfo cur = do
@@ -89,7 +102,7 @@ parseVideo cur = trace "Parsing Video details..." $ Just Video
   }
   where
     getElemText cur name = T.unpack $ T.concat $ cur $// element name &// content
-    readElemText cur name def = maybe def id . readMaybe . getElemText cur $ name
+    readElemText cur name def = fromMaybe def . readMaybe . getElemText cur $ name
 
 parseAudio :: Cursor -> Maybe Audio
 parseAudio cur = trace "Parsing Audio details..." $ Just Audio
@@ -99,7 +112,7 @@ parseAudio cur = trace "Parsing Audio details..." $ Just Audio
   }
   where
     getElemText cur name = T.unpack $ T.concat $ cur $// element name &// content
-    readElemText cur name def = maybe def id . readMaybe . getElemText cur $ name
+    readElemText cur name def = fromMaybe def . readMaybe . getElemText cur $ name
 
 parseSubtitle :: Cursor -> Maybe Subtitle
 parseSubtitle cur = trace "Parsing Subtitle details..." $ Just Subtitle
