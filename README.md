@@ -1,5 +1,5 @@
 # Dork Manager
-![DorkManager](/home/bismuth/plutus/workspace/scdWs/DorkManager/logo.jpeg)
+![DorkManager](logo.jpeg)
 
 [![Haskell CI using Nix Flake](https://github.com/cardanonix/pelotero-engine/actions/workflows/haskell.yml/badge.svg)](https://github.com/cardanonix/pelotero-engine/actions/workflows/haskell.yml)
 
