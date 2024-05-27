@@ -7,7 +7,7 @@ import System.FilePath
 import Control.Monad
 import Data.List (sortOn, groupBy, (\\))
 import Data.Function (on)
-import Data.Maybe (mapMaybe, isNothing)
+import Data.Maybe (mapMaybe)
 import Data.Either (partitionEithers)
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString as BS
@@ -106,22 +106,21 @@ processNfoFile :: FilePath -> IO (Either String Movie)
 processNfoFile filePath = do
   putStrLn $ "Processing file: " ++ filePath
   result <- try (Text.XML.readFile def filePath) :: IO (Either SomeException Document)
+  let dir = takeDirectory filePath
   case result of
     Left ex -> do
       putStrLn $ "Error reading file: " ++ filePath ++ " - " ++ show ex
       return $ Left filePath
-    Right doc -> 
-      case parseNfoSafe doc of
-        Just movie -> return $ Right movie
+    Right doc -> do
+      movie <- parseNfoSafe dir doc
+      case movie of
+        Just m -> return $ Right m
         Nothing -> do
           putStrLn $ "Failed to parse NFO file: " ++ filePath
           return $ Left filePath
 
-parseNfoSafe :: Document -> Maybe Movie
-parseNfoSafe doc = 
-  case parseNfo doc of
-    Just movie -> Just movie
-    Nothing -> Nothing
+parseNfoSafe :: FilePath -> Document -> IO (Maybe Movie)
+parseNfoSafe dir doc = parseNfo dir doc
 
 findAndProcessDuplicates :: IO ()
 findAndProcessDuplicates = do

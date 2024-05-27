@@ -8,16 +8,22 @@ import Data.Text (Text, unpack)
 import qualified Data.Text as T
 import Text.Read (readMaybe)
 import Data.Maybe (listToMaybe, fromMaybe, mapMaybe)
+import System.FilePath (takeExtension, takeBaseName, takeFileName, takeDirectory, (</>))
+import System.Directory (doesFileExist, listDirectory)
 import Debug.Trace (trace, traceShowId, traceShow)
 import Movies
+import Control.Monad (forM)
+import Control.Monad.IO.Class (liftIO)
 
-parseNfo :: Document -> Maybe Movie
-parseNfo doc = do
+parseNfo :: FilePath -> Document -> IO (Maybe Movie)
+parseNfo dir doc = do
   let cursor = fromDocument doc
   trace "Parsing fileInfo..." $ return ()
-  fileInfo <- parseFileInfo =<< listToMaybe (cursor $// element (Name "fileinfo" Nothing Nothing))
+  let maybeFileInfo = parseFileInfo =<< listToMaybe (cursor $// element (Name "fileinfo" Nothing Nothing))
   trace "Parsing Movie details..." $ return ()
-  return Movie
+  videoFilePath <- findVideoFile dir
+  let checksum = extractChecksum dir
+  return $ Just Movie
     { title = traceShowId $ getElemText cursor (Name "title" Nothing Nothing)
     , originalTitle = traceShowId $ getElemText cursor (Name "originaltitle" Nothing Nothing)
     , sortTitle = traceShowId $ getElemText cursor (Name "sorttitle" Nothing Nothing)
@@ -36,10 +42,12 @@ parseNfo doc = do
     , studios = traceShowId $ getElemsText cursor (Name "studio" Nothing Nothing)
     , directors = traceShowId $ getElemsText cursor (Name "director" Nothing Nothing)
     , credits = traceShowId $ getElemsText cursor (Name "credits" Nothing Nothing)
-    , fileInfo = traceShowId $ fileInfo
+    , fileInfo = traceShowId $ fromMaybe defaultFileInfo maybeFileInfo
     , imdbId = traceShowId $ getAttrText cursor (Name "imdb" Nothing Nothing) (Name "id" Nothing Nothing)
     , tmdbId = traceShowId $ getAttrText cursor (Name "tmdb" Nothing Nothing) (Name "id" Nothing Nothing)
     , actors = traceShowId $ parseActors cursor
+    , videoFilePath = traceShowId videoFilePath
+    , checksum = traceShowId checksum
     }
   where
     getElemText cur name = trace ("Getting element text for: " ++ show name) $
@@ -57,19 +65,7 @@ parseNfo doc = do
     readElemText cur name def = trace ("Reading element text for: " ++ show name) $
       let text = getElemText cur name
       in fromMaybe def (readMaybe text)
-
-parseActors :: Cursor -> [Actor]
-parseActors cur = trace "Parsing actors..." $
-  mapMaybe parseActor (cur $// element (Name "actor" Nothing Nothing))
-
-parseActor :: Cursor -> Maybe Actor
-parseActor cur = do
-  name <- listToMaybe $ cur $// element (Name "name" Nothing Nothing) &// content
-  role <- listToMaybe $ cur $// element (Name "role" Nothing Nothing) &// content
-  return Actor
-    { name = T.unpack name
-    , role = T.unpack role
-    }
+    defaultFileInfo = FileInfo { streamDetails = StreamDetails (Video "" 0.0 0 0) [] [] }
 
 parseFileInfo :: Cursor -> Maybe FileInfo
 parseFileInfo cur = do
@@ -120,3 +116,32 @@ parseSubtitle cur = trace "Parsing Subtitle details..." $ Just Subtitle
   }
   where
     getElemText cur name = T.unpack $ T.concat $ cur $// element name &// content
+
+parseActors :: Cursor -> [Actor]
+parseActors cur = mapMaybe parseActor (cur $// element (Name "actor" Nothing Nothing))
+
+parseActor :: Cursor -> Maybe Actor
+parseActor cur = do
+  name <- listToMaybe $ cur $// element (Name "name" Nothing Nothing) &// content
+  role <- listToMaybe $ cur $// element (Name "role" Nothing Nothing) &// content
+  return Actor
+    { name = T.unpack name
+    , role = T.unpack role
+    }
+
+findVideoFile :: FilePath -> IO String
+findVideoFile dir = do
+  files <- listDirectory dir
+  let videoFiles = filter (\f -> takeExtension f `elem` videoExtensions) files
+  case videoFiles of
+    (vf:_) -> return (dir </> vf)
+    []     -> return ""
+
+videoExtensions :: [String]
+videoExtensions = [".mkv", ".mp4", ".avi", ".mov", ".wmv", ".flv"]
+
+extractChecksum :: FilePath -> String
+extractChecksum dir =
+  let baseName = takeFileName dir
+      checksum = drop 1 . takeWhile (/= '.') . dropWhile (/= '~') $ baseName
+  in if null checksum then "" else checksum

@@ -7,10 +7,6 @@ module Movies where
 
 import Data.Aeson (ToJSON, FromJSON, (.=), object, toJSON, toEncoding, pairs)
 import GHC.Generics (Generic)
-import Conduit (yieldMany, mapC)
-import Data.Conduit.Binary (sinkFileCautious)
-import Data.Text (Text)
-import qualified Data.Text as T
 
 data Movie = Movie
   { title :: String
@@ -35,6 +31,8 @@ data Movie = Movie
   , imdbId :: String
   , tmdbId :: String
   , actors :: [Actor]
+  , videoFilePath :: String
+  , checksum :: String
   } deriving (Show, Generic, Eq)
 
 instance FromJSON Movie
@@ -62,15 +60,22 @@ instance ToJSON Movie where
            , "fileInfo" .= fileInfo
            , "imdbId" .= imdbId
            , "tmdbId" .= tmdbId
+           , "videoFilePath" .= videoFilePath
+           , "checksum" .= checksum
            , "actors" .= actors
            ]
 
   toEncoding Movie{..} =
     pairs $ "movieId" .= movieId
          <> "title" .= title
+         <> "checksum" .= checksum
          <> "year" .= year
          <> "runtime" .= runtime
          <> "set" .= set
+         <> "imdbId" .= imdbId
+         <> "tmdbId" .= tmdbId
+         <> "fileInfo" .= fileInfo
+         <> "videoFilePath" .= videoFilePath
          <> "originalTitle" .= originalTitle
          <> "sortTitle" .= sortTitle
          <> "rating" .= rating
@@ -82,11 +87,8 @@ instance ToJSON Movie where
          <> "tags" .= tags
          <> "countries" .= countries
          <> "studios" .= studios
-         <> "directors" .= directors
+         <> "directors" .= directors   
          <> "credits" .= credits
-         <> "fileInfo" .= fileInfo
-         <> "imdbId" .= imdbId
-         <> "tmdbId" .= tmdbId
          <> "actors" .= actors
 
 data FileInfo = FileInfo
