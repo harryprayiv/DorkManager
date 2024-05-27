@@ -34,7 +34,7 @@ load_project_info_from_cabal() {
 build_exe() {
   local exeName=$1
   echo "Building $exeName..."
-  nix build .#$PROJECT_NAME:exe:$exeName --show-trace
+  nix build .#$PROJECT_NAME:exe:$exeName --show-trace --accept-flake-config
 }
 
 # Function to build all executables
