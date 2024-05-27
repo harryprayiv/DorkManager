@@ -2,7 +2,7 @@
 
 ![DorkManager Logo](logo.jpeg)
 
-[![Haskell CI using Nix Flake](https://github.com/cardanonix/pelotero-engine/actions/workflows/haskell.yml/badge.svg)](https://github.com/cardanonix/pelotero-engine/actions/workflows/haskell.yml)
+[![Haskell CI with Nix Flake](https://github.com/harryprayiv/DorkManager/actions/workflows/haskell.yml/badge.svg)](https://github.com/harryprayiv/DorkManager/actions/workflows/haskell.yml)
 
 ## Overview
 
