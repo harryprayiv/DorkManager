@@ -71,6 +71,12 @@ update_flake() {
 # Load project info from the .cabal file
 load_project_info_from_cabal
 
+# Check for command-line arguments
+if [[ "$1" == "--build-all" ]]; then
+  build_all_exes
+  exit 0
+fi
+
 # Main menu
 PS3='Please enter your choice: '
 options=("Build all executables" "Build and Run specific executable" "Collect Garbage" "Update Flake" "Quit")
