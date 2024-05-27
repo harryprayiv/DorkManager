@@ -25,10 +25,10 @@ jobs:
     - name: Run TUI build script
       run: |
         # Make the TUI script executable
-        chmod +x ./tui.sh
+        chmod +x ./tui
         
         # Run the TUI script in non-interactive mode to build all executables
-        ./tui.sh --build-all
+        ./tui --build-all
         
     - name: Run specific tests
       run: |
